@@ -4,6 +4,7 @@ from torch.optim import lr_scheduler
 import torch
 import time
 import copy
+from sklearn.metrics import f1_score
 
 
 class ModelTrainingMethods:
@@ -122,3 +123,20 @@ class ModelTrainingMethods:
                 running_acc += torch.sum(preds == labels)
                 total_examples += inputs.shape[0]
         return running_acc / total_examples
+
+    @staticmethod
+    def get_f1_score(model, loader, device):
+        model.eval()
+        final_predictions = []
+        final_labels = []
+        with torch.no_grad():
+            for inputs, labels in loader:
+                inputs = inputs.to(device)
+                labels = torch.squeeze(labels)
+                labels = labels.to(device)
+                outputs = model(inputs)
+                _, preds = torch.max(outputs, 1)
+                final_predictions.extend(preds.cpu().detach().numpy().tolist())
+                final_labels.extend(labels.cpu().detach().numpy().tolist())
+
+        return f1_score(final_labels, final_predictions, average="macro")

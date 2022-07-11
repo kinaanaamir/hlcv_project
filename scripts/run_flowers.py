@@ -43,6 +43,7 @@ if __name__ == "__main__":
     for i in list(temp):
         all_models.append([*i])
 
+    acc_and_f1 ={}
     for model_names in all_models:
 
         path = "model_weights"
@@ -60,8 +61,21 @@ if __name__ == "__main__":
                                                                            train_dataloader, test_dataloader,
                                                                            weight_path + path, device, num_epochs=10)
         print(model_names)
-        print("Training acc ", ModelTrainingMethods.get_acc(model, train_dataloader, device))
-        print("validation acc ", ModelTrainingMethods.get_acc(model, test_dataloader, device))
+        final_name = ""
+        for name in model_names:
+            final_name += name + "_"
+
+        final_name = final_name[:-1]
+        acc_and_f1[final_name] = [ModelTrainingMethods.get_acc(model, train_dataloader, device),
+                                  ModelTrainingMethods.get_acc(model, test_dataloader, device),
+                                  ModelTrainingMethods.get_f1_score(model, train_dataloader, device),
+                                  ModelTrainingMethods.get_f1_score(model, test_dataloader, device)]
+        print("Training acc ", acc_and_f1[final_name][0])
+        print("validation acc ", acc_and_f1[final_name][1])
+        print("Training f1 ", acc_and_f1[final_name][2])
+        print("validation f1 ", acc_and_f1[final_name][3])
 
         with open(weight_path + path + "train_losses_val_losses.pickle", "wb") as handle:
             pickle.dump([train_losses, val_losses], handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open("flower_values.pickle","wb") as handle:
+        pickle.dump(acc_and_f1, handle, protocol=pickle.HIGHEST_PROTOCOL)
