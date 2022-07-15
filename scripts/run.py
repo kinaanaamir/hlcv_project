@@ -11,13 +11,12 @@ import pickle
 from itertools import combinations
 from torch.utils.tensorboard import SummaryWriter
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('config', type=str, help='path to config file to be used for training.')
     args = parser.parse_args()
 
-    with open(args['config']) as f:
+    with open(args.config) as f:
         cfg = json.load(f)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dropouts = cfg['dropout']
@@ -26,8 +25,8 @@ if __name__ == "__main__":
 
     os.makedirs(cfg['weight_path'], exist_ok=True)
 
-    train_dataloader, test_dataloader, total_classes = DataProcessingHelperMethods.__dict__[f"prepare_{cfg['dataset']}_dataset"](
-        cfg['dataset_path'])
+    train_dataloader, test_dataloader, total_classes = getattr(DataProcessingHelperMethods,
+                                                               f"prepare_{cfg['dataset']}_dataset")(cfg['dataset_path'])
 
     A = ["vgg16", "vgg19", "google_net", "places"]
     all_models = []
@@ -36,7 +35,7 @@ if __name__ == "__main__":
         temp = combinations(A, i)
         for x in list(temp):
             all_models.append([*x])
-            
+
     acc_and_f1 = {}
     for dropout in dropouts:
         for cnn_names in all_models:
@@ -49,13 +48,14 @@ if __name__ == "__main__":
             criterion, optimizer_ft, exp_lr_scheduler = ModelHelperMethods.get_criterion_optimizer_scheduler(model)
             model = model.to(device)
             model, train_losses, val_losses = ModelTrainingMethods.train_model(model, criterion, optimizer_ft,
-                                                                            exp_lr_scheduler,
-                                                                            train_dataloader, test_dataloader,
-                                                                            current_weight_path, device, cfg['epochs'],
-                                                                            cfg['patience'], writer)
-            
+                                                                               exp_lr_scheduler,
+                                                                               train_dataloader, test_dataloader,
+                                                                               current_weight_path, device,
+                                                                               cfg['epochs'],
+                                                                               cfg['patience'], writer)
+
             acc_and_f1[model_name] = [ModelTrainingMethods.val_one_epoch(model, None, train_dataloader, device),
-                                    ModelTrainingMethods.val_one_epoch(model, None, test_dataloader, device)]
+                                      ModelTrainingMethods.val_one_epoch(model, None, test_dataloader, device)]
             print("Training acc ", acc_and_f1[model_name][0][1])
             print("validation acc ", acc_and_f1[model_name][1][1])
             print("Training f1 ", acc_and_f1[model_name][0][2])
