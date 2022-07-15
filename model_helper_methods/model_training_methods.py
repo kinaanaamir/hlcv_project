@@ -5,6 +5,7 @@ import torch
 import time
 import copy
 from sklearn.metrics import f1_score
+import os
 
 
 class ModelTrainingMethods:
@@ -53,6 +54,9 @@ class ModelTrainingMethods:
         model.eval()
         running_loss = 0.0
         total_examples = 0
+        running_acc = 0.0
+        final_predictions = []
+        final_labels = []
         with torch.no_grad():
             for inputs, labels in loader:
                 inputs = inputs.to(device)
@@ -60,13 +64,20 @@ class ModelTrainingMethods:
                 labels = labels.to(device)
                 outputs = model(inputs)
                 _, preds = torch.max(outputs, 1)
-                loss = criterion(outputs, labels)
+                loss = criterion(outputs, labels) if criterion is not None else 0
                 total_examples += inputs.shape[0]
                 # statistics
                 running_loss += loss.item()
+                running_acc += torch.sum(preds == labels)
+                final_predictions.extend(preds.cpu().detach().numpy().tolist())
+                final_labels.extend(labels.cpu().detach().numpy().tolist())
 
         epoch_loss = running_loss / total_examples
-        return epoch_loss
+        return (
+            epoch_loss, 
+            running_acc / total_examples,
+            f1_score(final_labels, final_predictions, average="macro")
+        )
 
     @staticmethod
     def epoch_time(start_time_, end_time_):
@@ -77,66 +88,43 @@ class ModelTrainingMethods:
 
     @staticmethod
     def train_model(model, criterion, optimizer, scheduler, trainloader, testloader, path, device,
-                    num_epochs=200):
+                    num_epochs, patience, writer):
         best_model_wts = copy.deepcopy(model.state_dict())
-        best_loss = 100000.0
+        best_acc = 0.0
         train_losses = []
         val_losses = []
+        steps_since_improvement = 0
         for epoch in range(num_epochs):
+            steps_since_improvement += 1
+            if steps_since_improvement >= patience:
+                break
             # Each epoch has a training and validation phase
             # Set model to evaluate mode
             start_time = time.time()
             train_loss = ModelTrainingMethods.train_one_epoch(model, criterion, optimizer, scheduler, trainloader,
                                                               device)
-            val_loss = ModelTrainingMethods.val_one_epoch(model, criterion, testloader, device)
+            val_loss, val_acc, val_f1 = ModelTrainingMethods.val_one_epoch(model, criterion, testloader, device)
             end_time = time.time()
             epoch_mins, epoch_secs = ModelTrainingMethods.epoch_time(start_time, end_time)
             print(f'Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s')
             print(f'\tTrain Loss: {train_loss:.3f}')
             print(f'\tValidation Loss: {val_loss:.3f}')
-            if val_loss < best_loss:
+            print(f'\tValidation Acc: {val_acc:.3f}')
+            if val_acc > best_acc:
                 best_model_wts = copy.deepcopy(model.state_dict())
-                print("val loss improved from", best_loss, " to ", val_loss)
-                best_loss = val_loss
+                print("val loss improved from", best_acc, " to ", val_acc)
+                best_acc = val_acc
+                steps_since_improvement = 0
             else:
-                print("val loss did not improve from ", best_loss)
+                print("val loss did not improve from ", best_acc)
 
+            writer.add_scalar('train_loss', train_loss, epoch)
+            writer.add_scalar('val_loss', val_loss, epoch)
+            writer.add_scalar('val_acc', val_acc, epoch)
+            writer.add_scalar('val_f1', val_f1, epoch)
             train_losses.append(train_loss)
             val_losses.append(val_loss)
         # load best model weights
         model.load_state_dict(best_model_wts)
-        torch.save(model.state_dict(), path + "best_model_weigths.pt")
+        torch.save(model.state_dict(), os.path.join(path, "best_model_weigths.pt"))
         return model, train_losses, val_losses
-
-    @staticmethod
-    def get_acc(model, loader, device):
-        model.eval()
-        total_examples = 0
-        running_acc = 0.0
-        with torch.no_grad():
-            for inputs, labels in loader:
-                inputs = inputs.to(device)
-                labels = torch.squeeze(labels)
-                labels = labels.to(device)
-                outputs = model(inputs)
-                _, preds = torch.max(outputs, 1)
-                running_acc += torch.sum(preds == labels)
-                total_examples += inputs.shape[0]
-        return running_acc / total_examples
-
-    @staticmethod
-    def get_f1_score(model, loader, device):
-        model.eval()
-        final_predictions = []
-        final_labels = []
-        with torch.no_grad():
-            for inputs, labels in loader:
-                inputs = inputs.to(device)
-                labels = torch.squeeze(labels)
-                labels = labels.to(device)
-                outputs = model(inputs)
-                _, preds = torch.max(outputs, 1)
-                final_predictions.extend(preds.cpu().detach().numpy().tolist())
-                final_labels.extend(labels.cpu().detach().numpy().tolist())
-
-        return f1_score(final_labels, final_predictions, average="macro")

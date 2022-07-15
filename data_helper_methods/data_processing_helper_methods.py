@@ -54,7 +54,7 @@ class DataProcessingHelperMethods:
         return train_dataloader, valid_dataloader, test_dataloader, total_classes
 
     @staticmethod
-    def prepare_for_cub_200_2011(base_path):
+    def prepare_cub_dataset(base_path):
         train_test_split = {}
         id_to_label = {}
         id_to_image_name = {}
@@ -161,7 +161,7 @@ class DataProcessingHelperMethods:
         return train_dataloader, test_dataloader, total_classes
 
     @staticmethod
-    def prepare_caltech(base_path, test_size=0.2):
+    def prepare_caltech_dataset(base_path, test_size=0.2):
         transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(),
                                         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
         folders = os.listdir(base_path)
