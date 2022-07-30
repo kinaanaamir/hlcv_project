@@ -1,0 +1,19 @@
+universe                = docker
+docker_image            = sohaib023/hlcv:latest5
+executable              = run.py
+arguments               = flowers.json
+output                  = logs/flowers.$(ClusterId).out
+error                   = logs/flowers.$(ClusterId).err
+log                     = logs/flowers.$(ClusterId).log
+should_transfer_files   = YES
+stream_output 			= True
+when_to_transfer_output = ON_EXIT
+transfer_input_files	= run.py,flowers.json,./model_helper_methods,./data_helper_methods,./custom_datasets
+transfer_output_files	= trainings
+request_GPUs = 1
+request_CPUs = 1
+request_memory = 8G
+requirements = UidDomain == "cs.uni-saarland.de" 
++WantGPUHomeMounted = true
+queue 1
+
