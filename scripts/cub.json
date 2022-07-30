@@ -1,8 +1,0 @@
-{
-    "weight_path": "trainings",
-    "epochs": 50,
-    "patience": 5,
-    "dataset": "cub",
-    "dropout": [0, 0.1, 0.3, 0.5, 0.7],
-    "dataset_path": "../datasets/CUB/"
-}

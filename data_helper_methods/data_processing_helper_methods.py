@@ -8,11 +8,13 @@ from torch.utils.data import DataLoader
 from collections import defaultdict
 import numpy as np
 
+BATCH_SIZE = 256
+NUM_WORKERS = 0
 
 class DataProcessingHelperMethods:
 
     @staticmethod
-    def prepare_flower_dataset(base_path):
+    def prepare_flowers_dataset(base_path):
         transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(),
                                         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
         training_path = base_path + "train/"
@@ -47,9 +49,9 @@ class DataProcessingHelperMethods:
         val_dataset = CustomFlowerDataSet(transform, valid_files, valid_labels)
         test_dataset = CustomFlowerDataSet(transform, test_files, test_labels)
 
-        train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-        valid_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=True)
-        test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=True)
+        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
+        valid_dataloader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
+        test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
 
         return train_dataloader, valid_dataloader, test_dataloader, total_classes
 
@@ -111,13 +113,13 @@ class DataProcessingHelperMethods:
         train_dataset = CustomCubDataSet(base_path + "images/", transform, training_files, training_labels)
         test_dataset = CustomCubDataSet(base_path + "images/", transform, test_files, test_labels)
 
-        train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-        test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=True)
-        return train_dataloader, test_dataloader, total_classes
+        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
+        test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
+        return train_dataloader, test_dataloader, test_dataloader, total_classes
 
     @staticmethod
     def prepare_food_dataset(base_path):
-        meta_path = base_path + "meta/"
+        meta_path = base_path
 
         with open(meta_path + "labels.txt", "r") as f:
             classes = f.readlines()
@@ -156,9 +158,9 @@ class DataProcessingHelperMethods:
         train_dataset = CustomFoodDataSet(transform, training_files, training_labels)
         test_dataset = CustomFoodDataSet(transform, test_files, test_labels)
 
-        train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-        test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=True)
-        return train_dataloader, test_dataloader, total_classes
+        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
+        test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
+        return train_dataloader, test_dataloader, test_dataloader, total_classes
 
     @staticmethod
     def prepare_caltech_dataset(base_path, test_size=0.2):
@@ -193,7 +195,7 @@ class DataProcessingHelperMethods:
         train_dataset = CustomCaltechDataSet(transform, training_files, training_labels)
         test_dataset = CustomCaltechDataSet(transform, test_files, test_labels)
 
-        train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-        test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=True)
+        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
+        test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
 
-        return train_dataloader, test_dataloader, total_classes
+        return train_dataloader, test_dataloader, test_dataloader, total_classes

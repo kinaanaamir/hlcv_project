@@ -64,10 +64,10 @@ class ModelTrainingMethods:
                 labels = labels.to(device)
                 outputs = model(inputs)
                 _, preds = torch.max(outputs, 1)
-                loss = criterion(outputs, labels) if criterion is not None else 0
+                loss = criterion(outputs, labels).item() if criterion is not None else 0
                 total_examples += inputs.shape[0]
                 # statistics
-                running_loss += loss.item()
+                running_loss += loss
                 running_acc += torch.sum(preds == labels)
                 final_predictions.extend(preds.cpu().detach().numpy().tolist())
                 final_labels.extend(labels.cpu().detach().numpy().tolist())
@@ -106,17 +106,18 @@ class ModelTrainingMethods:
             val_loss, val_acc, val_f1 = ModelTrainingMethods.val_one_epoch(model, criterion, testloader, device)
             end_time = time.time()
             epoch_mins, epoch_secs = ModelTrainingMethods.epoch_time(start_time, end_time)
-            print(f'Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s')
-            print(f'\tTrain Loss: {train_loss:.3f}')
-            print(f'\tValidation Loss: {val_loss:.3f}')
-            print(f'\tValidation Acc: {val_acc:.3f}')
+            print(f'Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s'
+                  f'\tTrain Loss: {train_loss:.3f}'
+                  f'\tValidation Loss: {val_loss:.3f}'
+                  f'\tValidation Acc: {val_acc:.3f}')
             if val_acc > best_acc:
                 best_model_wts = copy.deepcopy(model.state_dict())
-                print("val loss improved from", best_acc, " to ", val_acc)
+                # print("val loss improved from", best_acc, " to ", val_acc)
                 best_acc = val_acc
                 steps_since_improvement = 0
             else:
-                print("val loss did not improve from ", best_acc)
+                pass
+                # print("val loss did not improve from ", best_acc)
 
             writer.add_scalar('train_loss', train_loss, epoch)
             writer.add_scalar('val_loss', val_loss, epoch)

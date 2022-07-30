@@ -1,0 +1,8 @@
+{
+    "weight_path": "trainings",
+    "epochs": 50,
+    "patience": 5,
+    "dataset": "food",
+    "dropout": [0, 0.25, 0.5],
+    "dataset_path": "/home/hlcv_team000/hlcv_project/datasets/food/"
+}

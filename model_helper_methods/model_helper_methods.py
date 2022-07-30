@@ -46,6 +46,9 @@ class ModelHelperMethods:
         modules = list(model_google_net.children())[:-1]
         modules.extend([Sequential(Flatten())])
         model_google_net = torch.nn.Sequential(*(modules))
+        for idx, child in enumerate(list(model_google_net.children())):
+            for param in child.parameters():
+                param.requires_grad = False
 
         model_dictionary = {}
         model_dictionary["vgg16"] = model_vgg16.to(device)
