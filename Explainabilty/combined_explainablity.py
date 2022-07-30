@@ -210,8 +210,9 @@ if __name__ == "__main__":
     combined_output_1 = final_layers[0].forward(combined_input)
     combined_output_2 = final_layers[1].forward(combined_output_1)
     combined_output_3 = final_layers[2].forward(combined_output_2)
-
-    T = torch.FloatTensor((1.0 * (np.arange(200) == 0).reshape([1, 200, 1, 1])))
+    # class number
+    class_number = 0
+    T = torch.FloatTensor((1.0 * (np.arange(200) == class_number).reshape([1, 200, 1, 1])))
     R = [(combined_output_3 * T).data]
 
     rho = lambda p: p;
