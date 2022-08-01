@@ -27,7 +27,7 @@ class ModelTrainingMethods:
         # Iterate over data.
         for inputs, labels in loader:
             inputs = inputs.to(device)
-            labels = torch.squeeze(labels)
+            labels = torch.squeeze(labels, -1)
             labels = labels.to(device)
             # zero the parameter gradients
             optimizer.zero_grad()
@@ -60,7 +60,7 @@ class ModelTrainingMethods:
         with torch.no_grad():
             for inputs, labels in loader:
                 inputs = inputs.to(device)
-                labels = torch.squeeze(labels)
+                labels = torch.squeeze(labels, -1)
                 labels = labels.to(device)
                 outputs = model(inputs)
                 _, preds = torch.max(outputs, 1)

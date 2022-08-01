@@ -8,7 +8,8 @@ from torch.utils.data import DataLoader
 from collections import defaultdict
 import numpy as np
 
-BATCH_SIZE = 256
+SHUFFLE = False
+BATCH_SIZE = 1
 NUM_WORKERS = 0
 
 class DataProcessingHelperMethods:
@@ -49,9 +50,9 @@ class DataProcessingHelperMethods:
         val_dataset = CustomFlowerDataSet(transform, valid_files, valid_labels)
         test_dataset = CustomFlowerDataSet(transform, test_files, test_labels)
 
-        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
-        valid_dataloader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
-        test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
+        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS, pin_memory=True)
+        valid_dataloader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS, pin_memory=True)
+        test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS, pin_memory=True)
 
         return train_dataloader, valid_dataloader, test_dataloader, total_classes
 
@@ -113,8 +114,8 @@ class DataProcessingHelperMethods:
         train_dataset = CustomCubDataSet(base_path + "images/", transform, training_files, training_labels)
         test_dataset = CustomCubDataSet(base_path + "images/", transform, test_files, test_labels)
 
-        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
-        test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
+        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS, pin_memory=True)
+        test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS, pin_memory=True)
         return train_dataloader, test_dataloader, test_dataloader, total_classes
 
     @staticmethod
@@ -158,8 +159,8 @@ class DataProcessingHelperMethods:
         train_dataset = CustomFoodDataSet(transform, training_files, training_labels)
         test_dataset = CustomFoodDataSet(transform, test_files, test_labels)
 
-        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
-        test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
+        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS, pin_memory=True)
+        test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS, pin_memory=True)
         return train_dataloader, test_dataloader, test_dataloader, total_classes
 
     @staticmethod
@@ -195,7 +196,7 @@ class DataProcessingHelperMethods:
         train_dataset = CustomCaltechDataSet(transform, training_files, training_labels)
         test_dataset = CustomCaltechDataSet(transform, test_files, test_labels)
 
-        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
-        test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
+        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS, pin_memory=True)
+        test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS, pin_memory=True)
 
         return train_dataloader, test_dataloader, test_dataloader, total_classes
