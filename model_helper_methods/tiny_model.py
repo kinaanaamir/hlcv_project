@@ -91,6 +91,7 @@ class TinyModel(torch.nn.Module):
                 avgpool = nn.Conv2d(1024, 1024, 7)
                 avgpool.bias = nn.Parameter(torch.zeros_like(avgpool.bias))
                 avgpool.weight = nn.Parameter(torch.ones_like(avgpool.weight) / 49)
+                avgpool = avgpool.to(x.device)
                 layers.append(avgpool)
             converted_models.append(layers)
             A = [x] + [None] * len(layers)
@@ -127,6 +128,7 @@ class TinyModel(torch.nn.Module):
 
         num_classes = combined_output_3.shape[1]
         T = torch.FloatTensor((1.0 * (np.arange(num_classes) == vis_class).reshape([1, num_classes, 1, 1])))
+        T = T.to(combined_output_3.device)
         R = [(combined_output_3 * T).data]
 
         rho = lambda p: p
@@ -209,7 +211,7 @@ class TinyModel(torch.nn.Module):
                             R_inception = Rplus1
                         else:
                             R_inception = Rplus1 + R_inception
-                    R_curr[l] = R_inception / 4
+                    R_curr[l] = R_inception
                     assert A[l].shape[1] == R_curr[l].shape[1]
 
                 elif isinstance(layers[l], torch.nn.Conv2d) or isinstance(layers[l], torch.nn.AvgPool2d) or layers[l]._get_name() == 'BasicConv2d':
@@ -223,5 +225,5 @@ class TinyModel(torch.nn.Module):
                     R_curr[l] = R_curr[l + 1]
             
             for i, l in enumerate([1]):
-                utils.heatmap(np.array(R_curr[l][0]).sum(axis=0), 4, 4, path + "_" + self.model_names[ii] + '.png')
+                utils.heatmap(np.array(R_curr[l][0].detach().cpu()).sum(axis=0), 4, 4, path + "_" + self.model_names[ii] + '.png')
         assert divide_dimension == R[0].shape[1]
