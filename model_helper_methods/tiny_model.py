@@ -74,7 +74,7 @@ class TinyModel(torch.nn.Module):
         outputs = self.linear2(outputs)
         return outputs
 
-    def lrp(self, x, vis_class, path):
+    def lrp(self, x, vis_class, path, mask):
         # Forward
         A_all = []
         converted_models = []
@@ -96,24 +96,25 @@ class TinyModel(torch.nn.Module):
             converted_models.append(layers)
             A = [x] + [None] * len(layers)
             A_inception = [x] + [None] * len(layers)
-            for l in range(len(layers)):
-                if self.model_names[i] == 'google_net' and layers[l]._get_name() == 'Inception':
-                    assert layers[l].branch1._get_name() == 'BasicConv2d'
-                    assert len(layers[l].branch2) == 2
-                    assert len(layers[l].branch3) == 2
-                    assert len(layers[l].branch4) == 2
-                    A_inception[l] = [None] * 4
-                    for idx in range(4):
-                        _input = A[l]
-                        A_inception[l][idx] = [A[l]]
-                        if idx >= 1:
-                            for inception_layer in getattr(layers[l], f'branch{idx + 1}'):
-                                _input = inception_layer.forward(_input)
-                                A_inception[l][idx].append(_input)
-                        else:
-                            A_inception[l][idx].append(getattr(layers[l], f'branch{idx + 1}')(_input))
-                
-                A[l + 1] = layers[l].forward(A[l])
+            with torch.no_grad():
+                for l in range(len(layers)):
+                    if self.model_names[i] == 'google_net' and layers[l]._get_name() == 'Inception':
+                        assert layers[l].branch1._get_name() == 'BasicConv2d'
+                        assert len(layers[l].branch2) == 2
+                        assert len(layers[l].branch3) == 2
+                        assert len(layers[l].branch4) == 2
+                        A_inception[l] = [None] * 4
+                        for idx in range(4):
+                            _input = A[l]
+                            A_inception[l][idx] = [A[l]]
+                            if idx >= 1:
+                                for inception_layer in getattr(layers[l], f'branch{idx + 1}'):
+                                    _input = inception_layer.forward(_input)
+                                    A_inception[l][idx].append(_input)
+                            else:
+                                A_inception[l][idx].append(getattr(layers[l], f'branch{idx + 1}')(_input))
+                    
+                    A[l + 1] = layers[l].forward(A[l])
                 # print(l + 1, layers[l], A[l].shape, A[l + 1].shape)
             feature_maps.append(A[-1])
             A_all.append(A)
@@ -156,7 +157,7 @@ class TinyModel(torch.nn.Module):
         limits['vgg16'] = [16, 30]
         limits['vgg19'] = [16, 30]
         limits['places'] = [5, 13]
-        limits['google_net'] = [1, 10]
+        limits['google_net'] = [7, 15]
         for ii, model in enumerate(self.models):
             layers = converted_models[ii]
             L = len(layers)
@@ -192,7 +193,7 @@ class TinyModel(torch.nn.Module):
                         s = (r_next / z).data  # step 2
                         (z * s).sum().backward()
                         c = a.grad  # step 3
-                        return (a * c).data  # step 4
+                        return (a.detach() * c).data  # step 4
                     
                     R_inception = None
                     counter = 0
@@ -212,7 +213,38 @@ class TinyModel(torch.nn.Module):
                         else:
                             R_inception = Rplus1 + R_inception
                     R_curr[l] = R_inception
+                    assert counter == R_curr[l + 1].shape[1]
                     assert A[l].shape[1] == R_curr[l].shape[1]
+
+                    # if l <= 4:
+                    #     rho = lambda p: (p + 0.5 * p).clamp(min=15)
+                    #     incr = lambda z: (z + 1e+3).clamp(min=15)
+                    # if 5 <= l <= 15:
+                    #     rho = lambda p: p.clamp(min=15)
+                    #     incr = lambda z: (z + 1e-9 + 0.5 * ((z ** 2).mean() ** .5).data).clamp(min=0)
+                    # if l >= 16:
+                    #     rho = lambda p: p.clamp(min=15)
+                    #     incr = lambda z: (z + 1e+3).clamp(min=15)
+
+                    # plain = lambda p: p
+                    # # Branch1
+                    # z1 = incr(utils.newlayer(layers[l].branch1, rho).forward(A[l]))
+                    # # Branch2
+                    # z2_0 = utils.newlayer(layers[l].branch2[0], plain).forward(A[l])
+                    # z2_1 = incr(utils.newlayer(layers[l].branch2[1], rho).forward(z2_0))
+                    # # Branch3
+                    # z3_0 = utils.newlayer(layers[l].branch3[0], plain).forward(A[l])
+                    # z3_1 = incr(utils.newlayer(layers[l].branch3[1], rho).forward(z3_0))
+                    # # Branch4
+                    # z4_0 = utils.newlayer(layers[l].branch4[0], plain).forward(A[l])
+                    # z4_1 = incr(utils.newlayer(layers[l].branch4[1], rho).forward(z4_0))
+
+
+                    # z = torch.hstack((z1, z2_1, z3_1, z4_1))  # step 1
+                    # s = (R_curr[l + 1] / z).data  # step 2
+                    # (z * s).sum().backward()
+                    # c = A[l].grad  # step 3
+                    # R_curr[l] = (A[l] * c).data  # step 4
 
                 elif isinstance(layers[l], torch.nn.Conv2d) or isinstance(layers[l], torch.nn.AvgPool2d) or layers[l]._get_name() == 'BasicConv2d':
                     # import pdb; pdb.set_trace()
@@ -220,10 +252,14 @@ class TinyModel(torch.nn.Module):
                     s = (R_curr[l + 1] / z).data  # step 2
                     (z * s).sum().backward();
                     c = A[l].grad  # step 3
-                    R_curr[l] = (A[l] * c).data  # step 4
+                    R_curr[l] = (A[l].detach() * c).data  # step 4
                 else:
                     R_curr[l] = R_curr[l + 1]
-            
+                del  A[l]
+            # import pdb; pdb.set_trace()
             for i, l in enumerate([1]):
-                utils.heatmap(np.array(R_curr[l][0].detach().cpu()).sum(axis=0), 4, 4, path + "_" + self.model_names[ii] + '.png')
+                for image_idx in range(R_curr[l].shape[0]):
+                    if mask[image_idx] is False:
+                        continue
+                    utils.heatmap(np.array(R_curr[l][image_idx].detach().cpu()).sum(axis=0), 4, 4, f"{path}_{image_idx}_{self.model_names[ii]}.png")
         assert divide_dimension == R[0].shape[1]

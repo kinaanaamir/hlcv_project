@@ -4,7 +4,7 @@ import argparse
 
 from model_helper_methods.tiny_model import TinyModel
 from model_helper_methods.model_helper_methods import ModelHelperMethods
-from data_helper_methods.data_processing_helper_methods import DataProcessingHelperMethods
+from data_helper_methods.data_processing_helper_methods import DataProcessingHelperMethods, BATCH_SIZE
 import torch
 import os
 import pickle
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         acc = evaluation[1][1].item()
         # print(model_name, acc)
         n_backbones = len(model_name.rsplit('_', 1)[0].split('-'))
-        # if 'google_net' not in model_name or n_backbones >= 2 or n_backbones == 4:
+        # if n_backbones == 2 or n_backbones == 3:
         #     continue
         if n_backbones not in best_model_per_level or \
             best_model_per_level[n_backbones][1] < acc:
@@ -69,7 +69,7 @@ if __name__ == "__main__":
         model = TinyModel(backbones, total_classes, 0., model_dictionary, model_to_embedding_dictionary)
         model = model.to(device)
         model.load_state_dict(torch.load(os.path.join(cfg['weight_path'], cfg['dataset'], model_name, 'best_model_weigths.pt')))
-        result_val = ModelTrainingMethods.val_one_epoch(model, None, val_dataloader, device)
+        # result_val = ModelTrainingMethods.val_one_epoch(model, None, val_dataloader, device)
         models[n_backbones] = model
         results[n_backbones] = get_results(model)
         print(np.sum(results[n_backbones][0] == results[n_backbones][1]) / results[n_backbones][0].shape[0])
@@ -85,21 +85,23 @@ if __name__ == "__main__":
         model2_name = best_model_per_level[model2][0]
         model1 = models[model1]
         model2 = models[model2]
-        samples = (TP1 == False) & (TP2 == True)
+        samples = (TP1 == False) | (TP2 == True)
 
         os.makedirs(os.path.join(out_path, cfg['dataset'], f"{len(model1.models)}_{model1_name}"), exist_ok=True)
         os.makedirs(os.path.join(out_path, cfg['dataset'], f"{len(model2.models)}_{model2_name}"), exist_ok=True)
         model1.eval()
         model2.eval()
-        for i, (inputs, labels) in tqdm(enumerate(val_dataloader)):
-            print(samples[i])
-            if samples[i] == False:
+        for i, (inputs, labels) in tqdm(enumerate(val_dataloader), total=len(val_dataloader)):
+            if i > 20:
+                break
+            mask = samples[i* BATCH_SIZE: (i+1)*BATCH_SIZE]
+            if np.sum(mask) == 0:
                 continue
             inputs = inputs.to(device)
             labels = torch.squeeze(labels)
             labels = labels.to(device)
-            model1.lrp(inputs, results1[0][i], os.path.join(out_path, cfg['dataset'], f"{len(model1.models)}_{model1_name}", f"{i}_label"))
-            model1.lrp(inputs, results1[1][i], os.path.join(out_path, cfg['dataset'], f"{len(model1.models)}_{model1_name}", f"{i}_pred"))
-            model2.lrp(inputs, results2[0][i], os.path.join(out_path, cfg['dataset'], f"{len(model2.models)}_{model2_name}", f"{i}.png"))
+            model1.lrp(inputs, results1[0][i], os.path.join(out_path, cfg['dataset'], f"{len(model1.models)}_{model1_name}", f"label_{i}"), mask)
+            model1.lrp(inputs, results1[1][i], os.path.join(out_path, cfg['dataset'], f"{len(model1.models)}_{model1_name}", f"pred_{i}"), mask)
+            model2.lrp(inputs, results2[0][i], os.path.join(out_path, cfg['dataset'], f"{len(model2.models)}_{model2_name}", f"{i}"), mask)
     
-    compare(1, 3)
+    compare(1, 4)
