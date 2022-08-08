@@ -4,5 +4,5 @@
     "patience": 5,
     "dataset": "flowers",
     "dropout": [0, 0.25, 0.5],
-    "dataset_path": "/home/hlcv_team000/hlcv_project/datasets/flower/"
+    "dataset_path": "./datasets/flower/"
 }

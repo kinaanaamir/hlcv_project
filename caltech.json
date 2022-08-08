@@ -4,5 +4,5 @@
     "patience": 5,
     "dataset": "caltech",
     "dropout": [0, 0.25, 0.5],
-    "dataset_path": "/home/hlcv_team000/hlcv_project/datasets/caltech/"
+    "dataset_path": "./datasets/caltech/"
 }

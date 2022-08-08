@@ -9,7 +9,7 @@ from collections import defaultdict
 import numpy as np
 
 SHUFFLE = False
-BATCH_SIZE = 1
+BATCH_SIZE = 16
 NUM_WORKERS = 0
 
 class DataProcessingHelperMethods:

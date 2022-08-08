@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import utils
+import cv2
 
 def toconv_final_layers(layer, check=True):
     newlayers = []
@@ -93,9 +94,9 @@ class TinyModel(torch.nn.Module):
                 avgpool.weight = nn.Parameter(torch.ones_like(avgpool.weight) / 49)
                 avgpool = avgpool.to(x.device)
                 layers.append(avgpool)
+                A_inception = [x] + [None] * len(layers)
             converted_models.append(layers)
             A = [x] + [None] * len(layers)
-            A_inception = [x] + [None] * len(layers)
             with torch.no_grad():
                 for l in range(len(layers)):
                     if self.model_names[i] == 'google_net' and layers[l]._get_name() == 'Inception':
@@ -257,8 +258,15 @@ class TinyModel(torch.nn.Module):
                     R_curr[l] = R_curr[l + 1]
                 del  A[l]
             # import pdb; pdb.set_trace()
+            x_np = x.detach().cpu().numpy().transpose((0, 2, 3, 1))
+            x_np = x_np * np.array((0.229, 0.224, 0.225)) + (0.485, 0.456, 0.406)
+            x_np *= 255
+            x_np = x_np.astype(np.uint8)
             for i, l in enumerate([1]):
                 for image_idx in range(R_curr[l].shape[0]):
+                    img = x_np[image_idx]
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    cv2.imwrite(f"{path}_{image_idx}_orig.png", img)
                     if mask[image_idx] is False:
                         continue
                     utils.heatmap(np.array(R_curr[l][image_idx].detach().cpu()).sum(axis=0), 4, 4, f"{path}_{image_idx}_{self.model_names[ii]}.png")

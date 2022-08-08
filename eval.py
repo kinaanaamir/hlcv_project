@@ -32,7 +32,9 @@ if __name__ == "__main__":
     with open(os.path.join(cfg['weight_path'], cfg['dataset'], 'values.pickle'), 'rb') as f:
         values = pickle.load(f)
     num_backbones = dict()
-    
+
+    LIMIT = 200 // BATCH_SIZE
+
     # import pdb; pdb.set_trace()
     best_model_per_level = {}
     for model_name, evaluation in values.items():
@@ -50,7 +52,9 @@ if __name__ == "__main__":
         model.eval()
         final_predictions = []
         final_labels = []
-        for inputs, labels in tqdm(val_dataloader):
+        for i, (inputs, labels) in tqdm(enumerate(val_dataloader), total=min(LIMIT, len(val_dataloader))):
+            if i > LIMIT:
+                break
             inputs = inputs.to(device)
             labels = labels.squeeze(-1)
             labels = labels.to(device)
@@ -91,8 +95,8 @@ if __name__ == "__main__":
         os.makedirs(os.path.join(out_path, cfg['dataset'], f"{len(model2.models)}_{model2_name}"), exist_ok=True)
         model1.eval()
         model2.eval()
-        for i, (inputs, labels) in tqdm(enumerate(val_dataloader), total=len(val_dataloader)):
-            if i > 20:
+        for i, (inputs, labels) in tqdm(enumerate(val_dataloader), total=min(LIMIT, len(val_dataloader))):
+            if i > LIMIT:
                 break
             mask = samples[i* BATCH_SIZE: (i+1)*BATCH_SIZE]
             if np.sum(mask) == 0:
