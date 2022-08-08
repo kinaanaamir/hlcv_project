@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 if __name__ == "__main__":
-    path = "visualization/caltech"
+    path = "visualization/flowers"
     single_model_path = glob.glob(os.path.join(path, "1_*"))[0]
     stacked_model_path = glob.glob(os.path.join(path, "4_vgg*"))[0]
 
@@ -43,7 +43,10 @@ if __name__ == "__main__":
         for i, backbone in enumerate(stacked_backbones):
             tmp = cv2.imread(os.path.join(stacked_model_path, f"{tag}_{backbone}.png"))
             stacked_images.append(tmp)
-            axes[(1 if i > 1 else 0)][i + 1 - (2 if i > 1 else 0)].imshow(tmp)
+            try:
+                axes[(1 if i > 1 else 0)][i + 1 - (2 if i > 1 else 0)].imshow(tmp)
+            except:
+                continue
             plt.grid(False)
             plt.axis('off')
 
