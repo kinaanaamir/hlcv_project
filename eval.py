@@ -37,6 +37,14 @@ if __name__ == "__main__":
 
     # import pdb; pdb.set_trace()
     best_model_per_level = {}
+    del values["google_net_0.00"]
+    del values["places_0.00"]
+
+    del values["google_net_0.25"]
+    del values["places_0.25"]
+
+    del values["google_net_0.50"]
+    del values["places_0.50"]
     for model_name, evaluation in values.items():
         acc = evaluation[1][1].item()
         # print(model_name, acc)
